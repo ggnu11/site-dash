@@ -31,12 +31,15 @@ export const useAuthStore = create<AuthStore>()(
       /** 로그인 메서드 (현재는 목 데이터 기반) */
       login: async (email, password) => {
         // TODO: 실제 백엔드 연동 전 임시 로직
-        if (email === "test@example.com" && password === "password1234") {
+        if (
+          (email === "test@example.com" && password === "password1234") ||
+          (email === "admin" && password === "ipageon")
+        ) {
           set({
             user: {
               id: "1",
               email,
-              username: "TestUser",
+              username: email === "admin" ? "AdminUser" : "TestUser",
             },
             isAuthenticated: true,
           });
