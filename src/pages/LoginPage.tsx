@@ -8,14 +8,8 @@ import { z } from "zod";
 
 /** 로그인 스키마 */
 const loginSchema = z.object({
-  email: z
-    .string()
-    .refine(
-      (value) =>
-        value === "admin" || z.string().email().safeParse(value).success,
-      { message: "유효한 이메일 주소 또는 admin을 입력해주세요." }
-    ),
-  password: z.string().min(6, "비밀번호는 최소 6자 이상이어야 합니다."),
+  email: z.string(),
+  password: z.string(),
 });
 
 /** 로그인 페이지 컴포넌트 */
@@ -48,19 +42,8 @@ const LoginPage: React.FC = () => {
         setTimeout(() => {
           loginButton.classList.remove("animate-pulse");
 
-          // TODO: 실제 로그인 로직 구현
-          if (
-            (validatedData.email === "admin" &&
-              validatedData.password === "ipageon") ||
-            (validatedData.email === "admin@example.com" &&
-              validatedData.password === "ipageon")
-          ) {
-            navigate(AppRoutes.DASHBOARD);
-          } else {
-            setError(
-              "로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요."
-            );
-          }
+          // 모든 입력에 대해 로그인 허용
+          navigate(AppRoutes.DASHBOARD);
         }, 1000);
       }
     } catch (err) {
@@ -177,7 +160,6 @@ const LoginPage: React.FC = () => {
                       이메일
                     </label>
                     <Input
-                      type="email"
                       placeholder="이메일 주소를 입력하세요"
                       value={registerEmail}
                       onChange={(e) => setRegisterEmail(e.target.value)}
@@ -363,10 +345,10 @@ const LoginPage: React.FC = () => {
                 이메일
               </label>
               <Input
-                ref={emailInputRef}
-                type="email"
+                type="text"
                 placeholder="이메일 주소를 입력하세요"
                 value={email}
+                ref={emailInputRef}
                 autoComplete="email"
                 onChange={(e) => setEmail(e.target.value)}
                 className="bg-[#1E1E1E] text-white border-white/20 focus:border-yellow-500 focus:ring-yellow-500"
