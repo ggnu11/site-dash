@@ -1,13 +1,7 @@
-import React from "react";
-import {
-  HashRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-} from "react-router-dom";
 import { ProtectedRoute } from "@/processes/routing/lib/ProtectedRoute";
 import { AppRoutes } from "@/processes/routing/model/routes";
-import { useAuthStore } from "@/entities/auth/model/auth.store";
+import React from "react";
+import { Route, HashRouter as Router, Routes } from "react-router-dom";
 
 // 페이지 컴포넌트 임포트
 import LoginPage from "@/pages/LoginPage";
@@ -15,8 +9,6 @@ import SiteDash from "@/SiteDash";
 
 /** 애플리케이션 라우터 컴포넌트 */
 export const AppRouter: React.FC = () => {
-  const { isAuthenticated } = useAuthStore();
-
   return (
     <Router>
       <Routes>
