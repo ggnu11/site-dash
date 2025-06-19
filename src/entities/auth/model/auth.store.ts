@@ -39,7 +39,10 @@ export const useAuthStore = create<AuthStore>()(
             user: {
               id: "1",
               email,
-              username: email === "admin" ? "AdminUser" : "TestUser",
+              username:
+                email === "admin" || email === "test@example.com"
+                  ? "AdminUser"
+                  : "TestUser",
             },
             isAuthenticated: true,
           });
