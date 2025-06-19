@@ -51,7 +51,7 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       /** 회원가입 메서드 (현재는 목 데이터 기반) */
-      register: async (email, password, username) => {
+      register: async (email, username) => {
         // TODO: 실제 백엔드 연동 전 임시 로직
         set({
           user: {
