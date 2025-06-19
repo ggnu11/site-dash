@@ -7,6 +7,7 @@ import {
 } from "react-router-dom";
 import { ProtectedRoute } from "@/processes/routing/lib/ProtectedRoute";
 import { AppRoutes } from "@/processes/routing/model/routes";
+import { useAuthStore } from "@/entities/auth/model/auth.store";
 
 // 페이지 컴포넌트 임포트
 import LoginPage from "@/pages/LoginPage";
@@ -14,6 +15,8 @@ import SiteDash from "@/SiteDash";
 
 /** 애플리케이션 라우터 컴포넌트 */
 export const AppRouter: React.FC = () => {
+  const { isAuthenticated } = useAuthStore();
+
   return (
     <Router>
       <Routes>
@@ -33,11 +36,26 @@ export const AppRouter: React.FC = () => {
         {/* 루트 경로 처리 */}
         <Route
           path={AppRoutes.ROOT}
-          element={<Navigate to={AppRoutes.LOGIN} replace />}
+          element={
+            isAuthenticated ? (
+              <Navigate to={AppRoutes.DASHBOARD} replace />
+            ) : (
+              <Navigate to={AppRoutes.LOGIN} replace />
+            )
+          }
         />
 
         {/* 일치하는 라우트 없을 경우 */}
-        <Route path="*" element={<Navigate to={AppRoutes.LOGIN} replace />} />
+        <Route
+          path="*"
+          element={
+            isAuthenticated ? (
+              <Navigate to={AppRoutes.DASHBOARD} replace />
+            ) : (
+              <Navigate to={AppRoutes.LOGIN} replace />
+            )
+          }
+        />
       </Routes>
     </Router>
   );
