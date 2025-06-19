@@ -1,7 +1,7 @@
-import SiteDash from "./SiteDash";
+import { AppRouter } from "@/processes/routing/ui/AppRouter";
 
 function App() {
-  return <SiteDash />;
+  return <AppRouter />;
 }
 
 export default App;
