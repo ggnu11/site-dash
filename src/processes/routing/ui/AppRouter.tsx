@@ -34,28 +34,10 @@ export const AppRouter: React.FC = () => {
         />
 
         {/* 루트 경로 처리 */}
-        <Route
-          path={AppRoutes.ROOT}
-          element={
-            isAuthenticated ? (
-              <Navigate to={AppRoutes.DASHBOARD} replace />
-            ) : (
-              <Navigate to={AppRoutes.LOGIN} replace />
-            )
-          }
-        />
+        <Route path={AppRoutes.ROOT} element={<SiteDash />} />
 
         {/* 일치하는 라우트 없을 경우 */}
-        <Route
-          path="*"
-          element={
-            isAuthenticated ? (
-              <Navigate to={AppRoutes.DASHBOARD} replace />
-            ) : (
-              <Navigate to={AppRoutes.LOGIN} replace />
-            )
-          }
-        />
+        <Route path="*" element={<SiteDash />} />
       </Routes>
     </Router>
   );
