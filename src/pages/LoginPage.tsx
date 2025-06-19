@@ -1,3 +1,4 @@
+import { useAuthStore } from "@/entities/auth/model/auth.store";
 import { AppRoutes } from "@/processes/routing/model/routes";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -5,7 +6,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
-import { useAuthStore } from "@/entities/auth/model/auth.store";
 
 /** 로그인 페이지 컴포넌트 */
 const LoginPage: React.FC = () => {
