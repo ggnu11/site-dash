@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
+import { useAuthStore } from "@/entities/auth/model/auth.store";
 
 /** 로그인 페이지 컴포넌트 */
 const LoginPage: React.FC = () => {
@@ -14,6 +15,7 @@ const LoginPage: React.FC = () => {
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const navigate = useNavigate();
   const emailInputRef = useRef<HTMLInputElement>(null);
+  const { login } = useAuthStore();
 
   // 컴포넌트 마운트 시 이메일 입력란에 포커스
   useEffect(() => {
@@ -31,11 +33,18 @@ const LoginPage: React.FC = () => {
       if (loginButton) {
         loginButton.classList.add("animate-pulse");
 
-        setTimeout(() => {
+        setTimeout(async () => {
           loginButton.classList.remove("animate-pulse");
 
-          // 모든 입력에 대해 로그인 허용
-          navigate(AppRoutes.DASHBOARD);
+          // 로그인 시도
+          const loginSuccess = await login(email, "password1234");
+
+          if (loginSuccess) {
+            // 대시보드로 이동
+            navigate(AppRoutes.DASHBOARD);
+          } else {
+            setError("로그인에 실패했습니다.");
+          }
         }, 1000);
       }
     } catch (err) {
