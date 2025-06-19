@@ -266,8 +266,7 @@ const LoginPage: React.FC = () => {
                   type="submit"
                   className="w-full bg-yellow-500 text-black hover:bg-yellow-600 group"
                 >
-                  <span className="group-hover:hidden">회원가입</span>
-                  <span className="hidden group-hover:inline">환영합니다!</span>
+                  회원가입
                 </Button>
               </form>
             </motion.div>
@@ -335,8 +334,7 @@ const LoginPage: React.FC = () => {
             type="submit"
             className="w-full bg-yellow-500 text-black hover:bg-yellow-600 group"
           >
-            <span className="group-hover:hidden">로그인</span>
-            <span className="hidden group-hover:inline">환영합니다!</span>
+            로그인
           </Button>
         </form>
         <motion.div
