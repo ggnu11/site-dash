@@ -11,6 +11,7 @@ import {
   DialogTrigger,
 } from "@/shared/ui/dialog";
 import { useAuthStore } from "@/entities/auth/model/auth.store";
+import { AppRoutes } from "@/processes/routing/model/routes";
 
 /** 로그인 스키마 */
 const loginSchema = z.object({
@@ -40,10 +41,13 @@ const LoginPage: React.FC = () => {
 
     try {
       const validatedData = loginSchema.parse({ email, password });
-      const success = await login(validatedData.email, validatedData.password);
 
-      if (success) {
-        navigate("/dashboard");
+      // TODO: 실제 로그인 로직 구현
+      if (
+        validatedData.email === "test@example.com" &&
+        validatedData.password === "password123"
+      ) {
+        navigate(AppRoutes.DASHBOARD);
       } else {
         setError("로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.");
       }
@@ -137,32 +141,40 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow-md w-96">
-        <h2 className="text-2xl font-bold mb-6 text-center">로그인</h2>
+    <div className="min-h-screen bg-[#1E1E1E] flex items-center justify-center">
+      <div className="w-full max-w-md p-8">
+        <div className="text-left mb-8">
+          <span className="text-yellow-500 text-sm font-medium">WELCOME</span>
+          <h1 className="text-4xl font-bold text-white mt-2">로그인</h1>
+        </div>
         <form onSubmit={handleLogin} className="space-y-4">
           <Input
             type="email"
             placeholder="이메일"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            className="bg-[#2A2A2A] text-white border-[#404040] focus:border-yellow-500"
           />
           <Input
             type="password"
             placeholder="비밀번호"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            className="bg-[#2A2A2A] text-white border-[#404040] focus:border-yellow-500"
           />
           {error && <p className="text-red-500 text-sm">{error}</p>}
-          <Button type="submit" className="w-full">
+          <Button
+            type="submit"
+            className="w-full bg-yellow-500 text-black hover:bg-yellow-600"
+          >
             로그인
           </Button>
         </form>
         <div className="mt-4 text-center">
-          <p className="text-sm text-gray-600">
+          <span className="text-gray-400 text-sm">
             계정이 없으신가요?
             <RegisterDialog />
-          </p>
+          </span>
         </div>
       </div>
     </div>
