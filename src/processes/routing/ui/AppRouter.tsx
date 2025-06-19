@@ -1,6 +1,6 @@
 import React from "react";
 import {
-  BrowserRouter as Router,
+  HashRouter as Router,
   Routes,
   Route,
   Navigate,
@@ -15,7 +15,7 @@ import SiteDash from "@/SiteDash";
 /** 애플리케이션 라우터 컴포넌트 */
 export const AppRouter: React.FC = () => {
   return (
-    <Router basename="/site-dash">
+    <Router>
       <Routes>
         {/* 로그인 페이지 */}
         <Route path={AppRoutes.LOGIN} element={<LoginPage />} />
