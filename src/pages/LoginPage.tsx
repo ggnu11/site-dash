@@ -157,6 +157,7 @@ const LoginPage: React.FC = () => {
                       placeholder="사용자 이름을 입력하세요"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
+                      autoComplete="username"
                       className="bg-[#1E1E1E] text-white border-white/20 focus:border-yellow-500 focus:ring-yellow-500"
                     />
                   </motion.div>
@@ -173,6 +174,7 @@ const LoginPage: React.FC = () => {
                       placeholder="이메일 주소를 입력하세요"
                       value={registerEmail}
                       onChange={(e) => setRegisterEmail(e.target.value)}
+                      autoComplete="email"
                       className="bg-[#1E1E1E] text-white border-white/20 focus:border-yellow-500 focus:ring-yellow-500"
                     />
                   </motion.div>
@@ -189,6 +191,7 @@ const LoginPage: React.FC = () => {
                       placeholder="비밀번호를 입력하세요"
                       value={registerPassword}
                       onChange={(e) => setRegisterPassword(e.target.value)}
+                      autoComplete="new-password"
                       className="bg-[#1E1E1E] text-white border-white/20 focus:border-yellow-500 focus:ring-yellow-500"
                     />
                   </motion.div>
@@ -360,6 +363,7 @@ const LoginPage: React.FC = () => {
                 placeholder="이메일 주소를 입력하세요"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
                 className="bg-[#1E1E1E] text-white border-white/20 focus:border-yellow-500 focus:ring-yellow-500"
               />
             </motion.div>
@@ -382,6 +386,7 @@ const LoginPage: React.FC = () => {
                 placeholder="비밀번호를 입력하세요"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
                 className="bg-[#1E1E1E] text-white border-white/20 focus:border-yellow-500 focus:ring-yellow-500"
               />
             </motion.div>
