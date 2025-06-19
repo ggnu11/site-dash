@@ -6,12 +6,6 @@ import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 
-/** 로그인 스키마 */
-const loginSchema = z.object({
-  email: z.string(),
-  password: z.string(),
-});
-
 /** 로그인 페이지 컴포넌트 */
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -32,8 +26,6 @@ const LoginPage: React.FC = () => {
     setError("");
 
     try {
-      const validatedData = loginSchema.parse({ email, password });
-
       // 로그인 애니메이션 효과 추가
       const loginButton = e.currentTarget.querySelector("button");
       if (loginButton) {
