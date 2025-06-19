@@ -8,7 +8,13 @@ import { z } from "zod";
 
 /** 로그인 스키마 */
 const loginSchema = z.object({
-  email: z.string().email("유효한 이메일 주소를 입력해주세요."),
+  email: z
+    .string()
+    .refine(
+      (value) =>
+        value === "admin" || z.string().email().safeParse(value).success,
+      { message: "유효한 이메일 주소 또는 admin을 입력해주세요." }
+    ),
   password: z.string().min(6, "비밀번호는 최소 6자 이상이어야 합니다."),
 });
 
@@ -44,8 +50,10 @@ const LoginPage: React.FC = () => {
 
           // TODO: 실제 로그인 로직 구현
           if (
-            validatedData.email === "admin@example.com" &&
-            validatedData.password === "ipageon"
+            (validatedData.email === "admin" &&
+              validatedData.password === "ipageon") ||
+            (validatedData.email === "admin@example.com" &&
+              validatedData.password === "ipageon")
           ) {
             navigate(AppRoutes.DASHBOARD);
           } else {
@@ -359,6 +367,7 @@ const LoginPage: React.FC = () => {
                 type="email"
                 placeholder="이메일 주소를 입력하세요"
                 value={email}
+                autoComplete="email"
                 onChange={(e) => setEmail(e.target.value)}
                 className="bg-[#1E1E1E] text-white border-white/20 focus:border-yellow-500 focus:ring-yellow-500"
               />
@@ -381,6 +390,7 @@ const LoginPage: React.FC = () => {
                 type="password"
                 placeholder="비밀번호를 입력하세요"
                 value={password}
+                autoComplete="current-password"
                 onChange={(e) => setPassword(e.target.value)}
                 className="bg-[#1E1E1E] text-white border-white/20 focus:border-yellow-500 focus:ring-yellow-500"
               />
