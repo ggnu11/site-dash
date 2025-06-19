@@ -245,21 +245,54 @@ const LoginPage: React.FC = () => {
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
+      initial={{ opacity: 0, y: 50 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{
+        duration: 0.7,
+        type: "spring",
+        stiffness: 100,
+        damping: 15,
+      }}
       className="min-h-screen bg-[#1E1E1E] flex items-center justify-center p-4"
     >
-      <div className="w-full max-w-md bg-[#2A2A2A] rounded-2xl shadow-2xl border border-white/10 overflow-hidden">
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{
+          duration: 0.6,
+          delay: 0.2,
+          type: "spring",
+          stiffness: 120,
+          damping: 10,
+        }}
+        className="w-full max-w-md bg-[#2A2A2A] rounded-2xl shadow-2xl border border-white/10 overflow-hidden"
+      >
         <div className="p-8 space-y-6">
           <motion.div
-            initial={{ y: -50, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.5 }}
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              duration: 0.5,
+              delay: 0.3,
+              type: "spring",
+              stiffness: 100,
+              damping: 15,
+            }}
             className="text-center"
           >
             <div className="flex justify-center mb-6">
-              <div className="w-16 h-16 bg-yellow-500/20 rounded-full flex items-center justify-center">
+              <motion.div
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{
+                  duration: 0.6,
+                  delay: 0.4,
+                  type: "spring",
+                  stiffness: 150,
+                  damping: 10,
+                }}
+                className="w-16 h-16 bg-yellow-500/20 rounded-full flex items-center justify-center"
+              >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="40"
@@ -275,18 +308,48 @@ const LoginPage: React.FC = () => {
                   <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.28 1.15-.28 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
                   <path d="M9 18c-4.51 2-5-2-7-2" />
                 </svg>
-              </div>
+              </motion.div>
             </div>
-            <h1 className="text-4xl font-bold text-white mb-2">로그인</h1>
-            <p className="text-sm text-white/60">
+            <motion.h1
+              initial={{ opacity: 0, x: -30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{
+                duration: 0.5,
+                delay: 0.5,
+                type: "spring",
+                stiffness: 100,
+                damping: 15,
+              }}
+              className="text-4xl font-bold text-white mb-2"
+            >
+              로그인
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{
+                duration: 0.5,
+                delay: 0.6,
+                type: "spring",
+                stiffness: 100,
+                damping: 15,
+              }}
+              className="text-sm text-white/60"
+            >
               사이트 대시보드에 접속하세요
-            </p>
+            </motion.p>
           </motion.div>
           <form onSubmit={handleLogin} className="space-y-4">
             <motion.div
-              initial={{ x: -20, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: 0.1 }}
+              initial={{ opacity: 0, x: -40 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{
+                duration: 0.5,
+                delay: 0.7,
+                type: "spring",
+                stiffness: 100,
+                damping: 15,
+              }}
             >
               <label className="block text-sm font-medium text-white/80 mb-2">
                 이메일
@@ -301,9 +364,15 @@ const LoginPage: React.FC = () => {
               />
             </motion.div>
             <motion.div
-              initial={{ x: -20, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: 0.2 }}
+              initial={{ opacity: 0, x: 40 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{
+                duration: 0.5,
+                delay: 0.8,
+                type: "spring",
+                stiffness: 100,
+                damping: 15,
+              }}
             >
               <label className="block text-sm font-medium text-white/80 mb-2">
                 비밀번호
@@ -318,8 +387,15 @@ const LoginPage: React.FC = () => {
             </motion.div>
             {error && (
               <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{
+                  duration: 0.4,
+                  delay: 0.9,
+                  type: "spring",
+                  stiffness: 300,
+                  damping: 15,
+                }}
                 className="text-red-400 text-sm flex items-center gap-2"
               >
                 <svg
@@ -341,17 +417,35 @@ const LoginPage: React.FC = () => {
                 {error}
               </motion.p>
             )}
-            <Button
-              type="submit"
-              className="w-full bg-yellow-500 text-black hover:bg-yellow-600 transition-colors duration-300 ease-in-out"
+            <motion.div
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                duration: 0.5,
+                delay: 1,
+                type: "spring",
+                stiffness: 100,
+                damping: 15,
+              }}
             >
-              로그인
-            </Button>
+              <Button
+                type="submit"
+                className="w-full bg-yellow-500 text-black hover:bg-yellow-600 transition-colors duration-300 ease-in-out"
+              >
+                로그인
+              </Button>
+            </motion.div>
           </form>
           <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.3 }}
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              duration: 0.5,
+              delay: 1.1,
+              type: "spring",
+              stiffness: 100,
+              damping: 15,
+            }}
             className="text-center"
           >
             <p className="text-sm text-white/60">
@@ -365,7 +459,7 @@ const LoginPage: React.FC = () => {
             </p>
           </motion.div>
         </div>
-      </div>
+      </motion.div>
 
       <RegisterModal />
     </motion.div>

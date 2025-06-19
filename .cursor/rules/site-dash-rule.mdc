@@ -6,6 +6,7 @@ alwaysApply: false
 # .cursor/rules
 
 # 🧠 기본 전제
+- 안쓰는 함수나 import는 제거해주세요.
 - 모든 컴포넌트는 React + TypeScript로 작성해주세요.
 - props 및 상태는 명확한 타입 정의(TypeScript interface or zod schema)로 구성해주세요.
 - 컴포넌트는 가능한 재사용 가능하고 SRP(Single Responsibility Principle)를 지켜주세요.
