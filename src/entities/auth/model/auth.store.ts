@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import { authAPI } from "@/shared/api/auth";
 
 /** 사용자 인증 상태 인터페이스 */
 interface User {
@@ -28,44 +29,36 @@ export const useAuthStore = create<AuthStore>()(
       user: null,
       isAuthenticated: false,
 
-      /** 로그인 메서드 (현재는 목 데이터 기반) */
+      /** 로그인 메서드 */
       login: async (email, password) => {
-        // TODO: 실제 백엔드 연동 전 임시 로직
-        if (
-          (email === "test@example.com" && password === "password1234") ||
-          (email === "admin" && password === "ipageon")
-        ) {
-          const user = {
-            id: "1",
-            email,
-            username:
-              email === "admin" || email === "test@example.com"
-                ? "AdminUser"
-                : "TestUser",
-          };
+        try {
+          const response = await authAPI.login({ email, password });
 
-          // 세션 스토리지에도 저장하여 GitHub Pages 호환성 개선
-          try {
-            sessionStorage.setItem("auth-user", JSON.stringify(user));
-            sessionStorage.setItem("auth-status", "true");
-          } catch (error) {
-            console.error("Failed to save auth state", error);
-          }
+          // 토큰을 별도로 저장
+          localStorage.setItem("auth-token", response.token);
+
+          const user = {
+            id: response.user.id,
+            email: response.user.email,
+            username: response.user.username,
+          };
 
           set({
             user,
             isAuthenticated: true,
           });
           return true;
+        } catch (error) {
+          console.error("Login failed:", error);
+          return false;
         }
-        return false;
       },
 
       /** 로그아웃 메서드 */
       logout: () => {
         try {
-          sessionStorage.removeItem("auth-user");
-          sessionStorage.removeItem("auth-status");
+          localStorage.removeItem("auth-token");
+          localStorage.removeItem("auth-storage");
         } catch (error) {
           console.error("Failed to clear auth state", error);
         }
@@ -73,27 +66,33 @@ export const useAuthStore = create<AuthStore>()(
         set({ user: null, isAuthenticated: false });
       },
 
-      /** 회원가입 메서드 (현재는 목 데이터 기반) */
-      register: async (email, username) => {
-        // TODO: 실제 백엔드 연동 전 임시 로직
-        const user = {
-          id: Date.now().toString(),
-          email,
-          username,
-        };
-
+      /** 회원가입 메서드 */
+      register: async (email, password, username) => {
         try {
-          sessionStorage.setItem("auth-user", JSON.stringify(user));
-          sessionStorage.setItem("auth-status", "true");
-        } catch (error) {
-          console.error("Failed to save auth state", error);
-        }
+          const response = await authAPI.register({
+            email,
+            password,
+            username,
+          });
 
-        set({
-          user,
-          isAuthenticated: true,
-        });
-        return true;
+          // 토큰을 별도로 저장
+          localStorage.setItem("auth-token", response.token);
+
+          const user = {
+            id: response.user.id,
+            email: response.user.email,
+            username: response.user.username,
+          };
+
+          set({
+            user,
+            isAuthenticated: true,
+          });
+          return true;
+        } catch (error) {
+          console.error("Register failed:", error);
+          return false;
+        }
       },
     }),
     {

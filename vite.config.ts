@@ -5,12 +5,12 @@ import tsconfigPaths from "vite-tsconfig-paths";
 import path from "path";
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   plugins: [react(), tailwindcss(), tsconfigPaths()],
-  base: "/site-dash/",
+  base: command === "build" ? "/site-dash/" : "/",
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
   },
-});
+}));

@@ -1,0 +1,6 @@
+PORT=5000
+MONGODB_URI=mongodb+srv://admin:a12578@cluster0.szcqwyt.mongodb.net/site_dash?retryWrites=true&w=majority&appName=Cluster0
+JWT_SECRET=your_super_secret_jwt_key_here
+FRONTEND_URL=http://localhost:5173
+
+# 실제 사용 시 이 파일을 .env로 복사하고 값을 수정하세요 

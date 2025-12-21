@@ -15,12 +15,21 @@ const LoginPage: React.FC = () => {
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const navigate = useNavigate();
   const emailInputRef = useRef<HTMLInputElement>(null);
-  const { login } = useAuthStore();
+  const { login, register, isAuthenticated } = useAuthStore();
+
+  // 이미 인증된 경우 대시보드로 리다이렉트
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate(AppRoutes.DASHBOARD, { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   // 컴포넌트 마운트 시 이메일 입력란에 포커스
   useEffect(() => {
-    emailInputRef.current?.focus();
-  }, []);
+    if (!isAuthenticated) {
+      emailInputRef.current?.focus();
+    }
+  }, [isAuthenticated]);
 
   /** 로그인 핸들러 */
   const handleLogin = async (e: React.FormEvent) => {
@@ -37,7 +46,7 @@ const LoginPage: React.FC = () => {
           loginButton.classList.remove("animate-pulse");
 
           // 로그인 시도
-          const loginSuccess = await login(email, "password1234");
+          const loginSuccess = await login(email, password);
 
           if (loginSuccess) {
             // 대시보드로 이동
@@ -68,16 +77,28 @@ const LoginPage: React.FC = () => {
       setRegisterError("");
 
       try {
-        // TODO: 실제 회원가입 로직 구현
         const registerButton = e.currentTarget.querySelector("button");
         if (registerButton) {
           registerButton.classList.add("animate-pulse");
+        }
 
-          setTimeout(() => {
-            registerButton.classList.remove("animate-pulse");
-            alert(`회원가입 시도: ${username}, ${registerEmail}`);
-            setIsRegisterModalOpen(false);
-          }, 1000);
+        // 실제 회원가입 API 호출
+        const registerSuccess = await register(
+          registerEmail,
+          registerPassword,
+          username
+        );
+
+        if (registerButton) {
+          registerButton.classList.remove("animate-pulse");
+        }
+
+        if (registerSuccess) {
+          setIsRegisterModalOpen(false);
+          // 회원가입 성공 시 대시보드로 이동
+          navigate(AppRoutes.DASHBOARD);
+        } else {
+          setRegisterError("회원가입에 실패했습니다.");
         }
       } catch (err) {
         setRegisterError("회원가입 중 오류가 발생했습니다.");
