@@ -69,30 +69,20 @@ app.use((error, req, res, next) => {
 
 const PORT = process.env.PORT || 5001;
 
-// 헬스체크 엔드포인트 (Railway 헬스체크용)
-app.get("/health", async (req, res) => {
-  let dbStatus = "disconnected";
-  try {
-    if (supabase) {
-      const { error } = await supabase.from("users").select("id").limit(1);
-      dbStatus = error && error.code === "PGRST116" ? "no_tables" : "connected";
-    }
-  } catch (error) {
-    dbStatus = "error";
-  }
-
+// 헬스체크 엔드포인트 (Railway 헬스체크용 - 빠른 응답)
+app.get("/health", (req, res) => {
   res.status(200).json({ 
     status: "ok",
-    timestamp: new Date().toISOString(),
-    database: dbStatus
+    timestamp: new Date().toISOString()
   });
 });
 
 // 서버를 먼저 시작 (Railway 헬스체크를 위해)
-app.listen(PORT, () => {
+// 0.0.0.0으로 바인딩하여 외부에서 접근 가능하도록 설정
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📡 API endpoint: http://localhost:${PORT}/api`);
-  console.log(`❤️  Health check: http://localhost:${PORT}/health`);
+  console.log(`📡 API endpoint: http://0.0.0.0:${PORT}/api`);
+  console.log(`❤️  Health check: http://0.0.0.0:${PORT}/health`);
   
   // 서버 시작 후 비동기로 데이터베이스 연결 시도
   connectDB().then(() => {
