@@ -104,12 +104,12 @@ export function MenuDialog() {
   };
 
   /** 폼 제출 핸들러 */
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
       menuFormSchema.parse({ projectName, projectUrl, subMenus });
-      addMenu(projectName, projectUrl, subMenus);
+      await addMenu(projectName, projectUrl, subMenus);
       setOpen(false);
       resetState();
     } catch (error) {
@@ -131,6 +131,7 @@ export function MenuDialog() {
         );
         setErrors(formattedErrors);
       }
+      // API 에러는 menu.store에서 toast로 표시됨
     }
   };
 

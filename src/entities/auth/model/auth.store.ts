@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { authAPI } from "@/shared/api/auth";
+import { showError, showSuccess } from "@/shared/lib/toast";
 
 /** 사용자 인증 상태 인터페이스 */
 interface User {
@@ -49,9 +50,13 @@ export const useAuthStore = create<AuthStore>()(
             user,
             isAuthenticated: true,
           });
+          showSuccess("로그인에 성공했습니다!");
           return true;
-        } catch (error) {
+        } catch (error: any) {
           console.error("Login failed:", error);
+          const errorMessage =
+            error?.response?.data?.message || "로그인에 실패했습니다.";
+          showError(errorMessage);
           return false;
         }
       },
@@ -74,6 +79,7 @@ export const useAuthStore = create<AuthStore>()(
         }
 
         set({ user: null, isAuthenticated: false });
+        showSuccess("로그아웃되었습니다.");
       },
 
       /** 회원가입 메서드 */
@@ -98,9 +104,13 @@ export const useAuthStore = create<AuthStore>()(
             user,
             isAuthenticated: true,
           });
+          showSuccess("회원가입에 성공했습니다!");
           return true;
-        } catch (error) {
+        } catch (error: any) {
           console.error("Register failed:", error);
+          const errorMessage =
+            error?.response?.data?.message || "회원가입에 실패했습니다.";
+          showError(errorMessage);
           return false;
         }
       },
@@ -163,9 +173,13 @@ export const useAuthStore = create<AuthStore>()(
           // 상태 초기화
           set({ user: null, isAuthenticated: false });
 
+          showSuccess("회원탈퇴가 완료되었습니다.");
           return true;
-        } catch (error) {
+        } catch (error: any) {
           console.error("Delete account failed:", error);
+          const errorMessage =
+            error?.response?.data?.message || "회원탈퇴에 실패했습니다.";
+          showError(errorMessage);
           return false;
         }
       },

@@ -1,13 +1,13 @@
 import { useAuthStore } from "@/entities/auth/model/auth.store";
 import { AppRoutes } from "@/processes/routing/model/routes";
 import { Button } from "@/shared/ui/button";
+import { showError, showSuccess } from "@/shared/lib/toast";
 import { motion } from "framer-motion";
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 /** 로그인 페이지 컴포넌트 */
 const LoginPage: React.FC = () => {
-  const [error, setError] = useState("");
   const navigate = useNavigate();
   const { isAuthenticated, setGoogleAuth } = useAuthStore();
 
@@ -72,7 +72,7 @@ const LoginPage: React.FC = () => {
           errorMessage = "로그인 중 오류가 발생했습니다. 다시 시도해주세요.";
       }
 
-      setError(errorMessage);
+      showError(errorMessage);
       // URL에서 에러 파라미터 제거 (해시 라우터 사용)
       window.history.replaceState(
         {},
@@ -100,6 +100,7 @@ const LoginPage: React.FC = () => {
         // Zustand 스토어를 통해 인증 상태 설정
         setGoogleAuth(token, user);
         console.log("✅ [LoginPage] Auth state set, waiting for persist...");
+        showSuccess("로그인에 성공했습니다!");
 
         // persist 미들웨어가 localStorage에 저장하는 시간을 고려
         // 전체 페이지 새로고침을 통해 상태를 확실히 반영
@@ -116,7 +117,7 @@ const LoginPage: React.FC = () => {
           "❌ [LoginPage] Error processing Google login callback:",
           error
         );
-        setError("로그인 처리 중 오류가 발생했습니다.");
+        showError("로그인 처리 중 오류가 발생했습니다.");
       }
     }
   }, [navigate, setGoogleAuth]);
@@ -223,41 +224,6 @@ const LoginPage: React.FC = () => {
               Google 계정으로 로그인하세요
             </motion.p>
           </motion.div>
-
-          {error && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{
-                duration: 0.4,
-                delay: 0.7,
-                type: "spring",
-                stiffness: 300,
-                damping: 15,
-              }}
-              className="bg-red-500/20 border border-red-500/50 rounded-lg p-4"
-            >
-              <p className="text-red-400 text-sm flex items-center gap-2">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="text-red-400"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="12" y1="8" x2="12" y2="12" />
-                  <line x1="12" y1="16" x2="12.01" y2="16" />
-                </svg>
-                {error}
-              </p>
-            </motion.div>
-          )}
 
           <motion.div
             initial={{ opacity: 0, y: 40 }}

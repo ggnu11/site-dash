@@ -2,6 +2,7 @@ import { AppRouter } from "@/processes/routing/ui/AppRouter";
 import { useMenuStore } from "@/entities/menu/model/menu.store";
 import { useAuthStore } from "@/entities/auth/model/auth.store";
 import { useEffect, useState } from "react";
+import { Toaster } from "sonner";
 
 function App() {
   const fetchMenus = useMenuStore((state) => state.fetchMenus);
@@ -69,7 +70,24 @@ function App() {
     );
   }
 
-  return <AppRouter />;
+  return (
+    <>
+      <AppRouter />
+      <Toaster
+        position="top-center"
+        richColors
+        closeButton
+        duration={4000}
+        toastOptions={{
+          style: {
+            background: "#2A2A2A",
+            border: "1px solid rgba(255, 255, 255, 0.1)",
+            color: "#fff",
+          },
+        }}
+      />
+    </>
+  );
 }
 
 export default App;

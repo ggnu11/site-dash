@@ -1,4 +1,5 @@
 import { ProtectedRoute } from "@/processes/routing/lib/ProtectedRoute";
+import { AppRoutes } from "@/processes/routing/model/routes";
 import React from "react";
 import {
   Navigate,
@@ -17,11 +18,11 @@ export const AppRouter: React.FC = () => {
     <Router>
       <Routes>
         {/* 로그인 페이지 */}
-        <Route path="login" element={<LoginPage />} />
+        <Route path={AppRoutes.LOGIN} element={<LoginPage />} />
 
         {/* 대시보드 (보호된 라우트) */}
         <Route
-          path="dashboard"
+          path={AppRoutes.DASHBOARD}
           element={
             <ProtectedRoute>
               <SiteDash />
@@ -29,8 +30,12 @@ export const AppRouter: React.FC = () => {
           }
         />
 
-        {/* 루트 경로 - 로그인 페이지로 리다이렉트 */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        {/* 루트 경로 및 알 수 없는 경로 - 로그인 페이지로 리다이렉트 */}
+        <Route
+          path={AppRoutes.ROOT}
+          element={<Navigate to={AppRoutes.LOGIN} replace />}
+        />
+        <Route path="*" element={<Navigate to={AppRoutes.LOGIN} replace />} />
       </Routes>
     </Router>
   );

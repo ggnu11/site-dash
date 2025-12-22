@@ -33,6 +33,7 @@ import {
 } from "@/shared/ui/dropdown-menu";
 import { useNavigate } from "react-router-dom";
 import { AppRoutes } from "@/processes/routing/model/routes";
+import { showError } from "@/shared/lib/toast";
 
 /** URL 유효성 검사 함수 */
 const isValidUrl = (url: string) => {
@@ -75,11 +76,16 @@ const SiteDash = () => {
   }, []);
 
   /** 메뉴 삭제 확인 핸들러 */
-  const handleConfirmDelete = useCallback(() => {
+  const handleConfirmDelete = useCallback(async () => {
     if (selectedId) {
-      removeMenu(selectedId);
-      setSelectedId(null);
-      setIsDeleteDialogOpen(false);
+      try {
+        await removeMenu(selectedId);
+        setSelectedId(null);
+        setIsDeleteDialogOpen(false);
+      } catch (error) {
+        // 에러는 menu.store에서 toast로 표시됨
+        setIsDeleteDialogOpen(false);
+      }
     }
   }, [selectedId, removeMenu]);
 
@@ -103,7 +109,7 @@ const SiteDash = () => {
     if (success) {
       navigate(AppRoutes.LOGIN, { replace: true });
     } else {
-      alert("회원탈퇴에 실패했습니다. 다시 시도해주세요.");
+      showError("회원탈퇴에 실패했습니다. 다시 시도해주세요.");
     }
     setIsDeleteAccountDialogOpen(false);
   }, [deleteAccount, navigate]);

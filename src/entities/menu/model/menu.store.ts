@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { sitesAPI, type Site } from "@/shared/api/sites";
+import { showError, showSuccess } from "@/shared/lib/toast";
 
 /** 서브메뉴 아이템 타입 정의 */
 export interface SubMenuItem {
@@ -64,6 +65,7 @@ export const useMenuStore = create<MenuState>((set) => ({
       set({ menus, loading: false });
     } catch (error) {
       console.error("Error fetching menus:", error);
+      showError("메뉴를 불러오는데 실패했습니다.");
       set({ loading: false });
     }
   },
@@ -75,8 +77,11 @@ export const useMenuStore = create<MenuState>((set) => ({
       set((state) => ({
         menus: [...state.menus, newMenu],
       }));
-    } catch (error) {
+      showSuccess("메뉴가 성공적으로 추가되었습니다.");
+    } catch (error: any) {
       console.error("Error adding menu:", error);
+      const errorMessage = error?.response?.data?.message || "메뉴 추가에 실패했습니다.";
+      showError(errorMessage);
       throw error;
     }
   },
@@ -87,8 +92,11 @@ export const useMenuStore = create<MenuState>((set) => ({
       set((state) => ({
         menus: state.menus.filter((menu) => menu.id !== id),
       }));
-    } catch (error) {
+      showSuccess("메뉴가 성공적으로 삭제되었습니다.");
+    } catch (error: any) {
       console.error("Error removing menu:", error);
+      const errorMessage = error?.response?.data?.message || "메뉴 삭제에 실패했습니다.";
+      showError(errorMessage);
       throw error;
     }
   },
@@ -100,8 +108,11 @@ export const useMenuStore = create<MenuState>((set) => ({
       set((state) => ({
         menus: state.menus.map((menu) => (menu.id === id ? updatedMenu : menu)),
       }));
-    } catch (error) {
+      showSuccess("메뉴가 성공적으로 수정되었습니다.");
+    } catch (error: any) {
       console.error("Error updating menu:", error);
+      const errorMessage = error?.response?.data?.message || "메뉴 수정에 실패했습니다.";
+      showError(errorMessage);
       throw error;
     }
   },
