@@ -15,10 +15,38 @@ dotenv.config();
 const app = express();
 
 // 미들웨어
+// CORS 설정: 여러 origin 허용
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  "http://localhost:5173",
+  "https://ggnu11.github.io",
+  "https://ggnu11.github.io/site-dash",
+].filter(Boolean); // undefined 값 제거
+
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    origin: (origin, callback) => {
+      // origin이 없으면 (같은 origin 요청 또는 Postman 등) 허용
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      // 허용된 origin 목록에 있으면 허용
+      if (allowedOrigins.some((allowed) => origin.startsWith(allowed))) {
+        return callback(null, true);
+      }
+
+      // 개발 환경에서는 모든 origin 허용
+      if (process.env.NODE_ENV !== "production") {
+        return callback(null, true);
+      }
+
+      // 그 외의 경우 거부
+      callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 app.use(morgan("combined"));
