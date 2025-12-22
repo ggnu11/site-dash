@@ -35,4 +35,12 @@ export const authAPI = {
     const response = await apiClient.get("/auth/me");
     return response.data.user;
   },
+
+  logout: async (): Promise<void> => {
+    await apiClient.post("/auth/logout");
+  },
+
+  deleteAccount: async (): Promise<void> => {
+    await apiClient.delete("/auth/account");
+  },
 };

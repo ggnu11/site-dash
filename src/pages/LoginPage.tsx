@@ -1,258 +1,130 @@
 import { useAuthStore } from "@/entities/auth/model/auth.store";
 import { AppRoutes } from "@/processes/routing/model/routes";
 import { Button } from "@/shared/ui/button";
-import { Input } from "@/shared/ui/input";
-import { AnimatePresence, motion } from "framer-motion";
-import React, { useEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { z } from "zod";
 
 /** 로그인 페이지 컴포넌트 */
 const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const navigate = useNavigate();
-  const emailInputRef = useRef<HTMLInputElement>(null);
-  const { login, register, isAuthenticated } = useAuthStore();
+  const { isAuthenticated, setGoogleAuth } = useAuthStore();
 
   // 이미 인증된 경우 대시보드로 리다이렉트
   useEffect(() => {
     if (isAuthenticated) {
+      console.log(
+        "✅ [LoginPage] Already authenticated, redirecting to dashboard"
+      );
       navigate(AppRoutes.DASHBOARD, { replace: true });
+    } else {
+      console.log("ℹ️ [LoginPage] Not authenticated, showing login page");
     }
   }, [isAuthenticated, navigate]);
 
-  // 컴포넌트 마운트 시 이메일 입력란에 포커스
+  // Google OAuth 콜백 처리
   useEffect(() => {
-    if (!isAuthenticated) {
-      emailInputRef.current?.focus();
-    }
-  }, [isAuthenticated]);
+    // HashRouter를 사용하므로 해시에서 쿼리 파라미터를 추출해야 함
+    const hash = window.location.hash;
+    const hashPath = hash.split("?")[0]; // #/login 부분
+    const hashQuery = hash.includes("?") ? hash.split("?")[1] : "";
 
-  /** 로그인 핸들러 */
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
+    console.log("🔍 [LoginPage] Parsing hash:", { hash, hashPath, hashQuery });
 
-    try {
-      // 로그인 애니메이션 효과 추가
-      const loginButton = e.currentTarget.querySelector("button");
-      if (loginButton) {
-        loginButton.classList.add("animate-pulse");
+    const urlParams = new URLSearchParams(hashQuery || window.location.search);
+    const token = urlParams.get("token");
+    const userId = urlParams.get("userId");
+    const email = urlParams.get("email");
+    const username = urlParams.get("username");
+    const errorParam = urlParams.get("error");
 
-        setTimeout(async () => {
-          loginButton.classList.remove("animate-pulse");
+    console.log("🔍 [LoginPage] Extracted params:", {
+      hasToken: !!token,
+      hasUserId: !!userId,
+      hasEmail: !!email,
+      hasUsername: !!username,
+      hasError: !!errorParam,
+    });
 
-          // 로그인 시도
-          const loginSuccess = await login(email, password);
+    if (errorParam) {
+      let errorMessage = "구글 로그인에 실패했습니다. 다시 시도해주세요.";
 
-          if (loginSuccess) {
-            // 대시보드로 이동
-            navigate(AppRoutes.DASHBOARD);
-          } else {
-            setError("로그인에 실패했습니다.");
-          }
-        }, 1000);
+      // 오류 타입에 따른 메시지 설정
+      switch (errorParam) {
+        case "oauth_code_expired":
+          errorMessage = "인증 코드가 만료되었습니다. 다시 로그인해주세요.";
+          break;
+        case "database_connection_failed":
+          errorMessage =
+            "데이터베이스 연결에 실패했습니다. 서버 관리자에게 문의하세요.";
+          break;
+        case "google_auth_failed":
+          errorMessage = "구글 로그인에 실패했습니다. 다시 시도해주세요.";
+          break;
+        case "token_generation_failed":
+          errorMessage = "토큰 생성에 실패했습니다. 다시 시도해주세요.";
+          break;
+        case "user_not_found":
+          errorMessage = "사용자 정보를 찾을 수 없습니다. 다시 시도해주세요.";
+          break;
+        default:
+          errorMessage = "로그인 중 오류가 발생했습니다. 다시 시도해주세요.";
       }
-    } catch (err) {
-      if (err instanceof z.ZodError) {
-        setError(err.errors[0].message);
-      } else {
-        setError("로그인 중 오류가 발생했습니다.");
-      }
+
+      setError(errorMessage);
+      // URL에서 에러 파라미터 제거 (해시 라우터 사용)
+      window.history.replaceState(
+        {},
+        document.title,
+        window.location.pathname + "#/login"
+      );
+      return;
     }
-  };
 
-  /** 회원가입 모달 */
-  const RegisterModal = () => {
-    const [username, setUsername] = useState("");
-    const [registerEmail, setRegisterEmail] = useState("");
-    const [registerPassword, setRegisterPassword] = useState("");
-    const [registerError, setRegisterError] = useState("");
-
-    const handleRegister = async (e: React.FormEvent) => {
-      e.preventDefault();
-      setRegisterError("");
-
+    if (token && userId && email && username) {
       try {
-        const registerButton = e.currentTarget.querySelector("button");
-        if (registerButton) {
-          registerButton.classList.add("animate-pulse");
-        }
+        console.log("🔐 [LoginPage] Google OAuth callback received:", {
+          token: token.substring(0, 20) + "...",
+          userId,
+          email,
+          username,
+        });
 
-        // 실제 회원가입 API 호출
-        const registerSuccess = await register(
-          registerEmail,
-          registerPassword,
-          username
+        const user = {
+          id: userId,
+          email: decodeURIComponent(email),
+          username: decodeURIComponent(username),
+        };
+
+        // Zustand 스토어를 통해 인증 상태 설정
+        setGoogleAuth(token, user);
+        console.log("✅ [LoginPage] Auth state set, waiting for persist...");
+
+        // persist 미들웨어가 localStorage에 저장하는 시간을 고려
+        // 전체 페이지 새로고침을 통해 상태를 확실히 반영
+        setTimeout(() => {
+          console.log(
+            "🚀 [LoginPage] Redirecting to dashboard with full page reload"
+          );
+          // 해시 라우터를 사용하므로 #/dashboard로 리다이렉트
+          window.location.href =
+            window.location.origin + window.location.pathname + "#/dashboard";
+        }, 300);
+      } catch (error) {
+        console.error(
+          "❌ [LoginPage] Error processing Google login callback:",
+          error
         );
-
-        if (registerButton) {
-          registerButton.classList.remove("animate-pulse");
-        }
-
-        if (registerSuccess) {
-          setIsRegisterModalOpen(false);
-          // 회원가입 성공 시 대시보드로 이동
-          navigate(AppRoutes.DASHBOARD);
-        } else {
-          setRegisterError("회원가입에 실패했습니다.");
-        }
-      } catch (err) {
-        setRegisterError("회원가입 중 오류가 발생했습니다.");
+        setError("로그인 처리 중 오류가 발생했습니다.");
       }
-    };
+    }
+  }, [navigate, setGoogleAuth]);
 
-    return (
-      <AnimatePresence>
-        {isRegisterModalOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) {
-                setIsRegisterModalOpen(false);
-              }
-            }}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              transition={{ type: "spring", stiffness: 300, damping: 20 }}
-              className="w-full max-w-md bg-[#2A2A2A] rounded-2xl shadow-2xl border border-white/10 overflow-hidden"
-            >
-              <div className="p-8 space-y-6">
-                <div className="text-center">
-                  <div className="flex justify-center mb-6">
-                    <div className="w-16 h-16 bg-yellow-500/20 rounded-full flex items-center justify-center">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="40"
-                        height="40"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="text-yellow-500"
-                      >
-                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                        <circle cx="8.5" cy="7" r="4" />
-                        <line x1="20" y1="8" x2="20" y2="14" />
-                        <line x1="23" y1="11" x2="17" y2="11" />
-                      </svg>
-                    </div>
-                  </div>
-                  <h2 className="text-4xl font-bold text-white mb-2">
-                    회원가입
-                  </h2>
-                  <p className="text-sm text-white/60">
-                    새로운 계정을 만드세요
-                  </p>
-                </div>
-                <form onSubmit={handleRegister} className="space-y-4">
-                  <motion.div
-                    initial={{ x: -20, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: 0.1 }}
-                  >
-                    <label className="block text-sm font-medium text-white/80 mb-2">
-                      사용자 이름
-                    </label>
-                    <Input
-                      type="text"
-                      placeholder="사용자 이름을 입력하세요"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      className="bg-[#1E1E1E] text-white border-white/20 focus:border-yellow-500 focus:ring-yellow-500"
-                    />
-                  </motion.div>
-                  <motion.div
-                    initial={{ x: -20, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: 0.2 }}
-                  >
-                    <label className="block text-sm font-medium text-white/80 mb-2">
-                      이메일
-                    </label>
-                    <Input
-                      placeholder="이메일 주소를 입력하세요"
-                      value={registerEmail}
-                      onChange={(e) => setRegisterEmail(e.target.value)}
-                      className="bg-[#1E1E1E] text-white border-white/20 focus:border-yellow-500 focus:ring-yellow-500"
-                    />
-                  </motion.div>
-                  <motion.div
-                    initial={{ x: -20, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: 0.3 }}
-                  >
-                    <label className="block text-sm font-medium text-white/80 mb-2">
-                      비밀번호
-                    </label>
-                    <Input
-                      type="password"
-                      placeholder="비밀번호를 입력하세요"
-                      value={registerPassword}
-                      onChange={(e) => setRegisterPassword(e.target.value)}
-                      className="bg-[#1E1E1E] text-white border-white/20 focus:border-yellow-500 focus:ring-yellow-500"
-                    />
-                  </motion.div>
-                  {registerError && (
-                    <motion.p
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="text-red-400 text-sm flex items-center gap-2"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="text-red-400"
-                      >
-                        <circle cx="12" cy="12" r="10" />
-                        <line x1="12" y1="8" x2="12" y2="12" />
-                        <line x1="12" y1="16" x2="12.01" y2="16" />
-                      </svg>
-                      {registerError}
-                    </motion.p>
-                  )}
-                  <Button
-                    type="submit"
-                    className="w-full bg-yellow-500 text-black hover:bg-yellow-600 transition-colors duration-300 ease-in-out"
-                  >
-                    회원가입
-                  </Button>
-                </form>
-                <div className="text-center">
-                  <p className="text-sm text-white/60">
-                    이미 계정이 있으신가요?{" "}
-                    <button
-                      onClick={() => setIsRegisterModalOpen(false)}
-                      className="text-yellow-500 hover:underline font-medium"
-                    >
-                      로그인
-                    </button>
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    );
+  /** Google 로그인 핸들러 */
+  const handleGoogleLogin = () => {
+    const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
+    window.location.href = `${apiUrl}/auth/google`;
   };
 
   return (
@@ -348,70 +220,24 @@ const LoginPage: React.FC = () => {
               }}
               className="text-sm text-white/60"
             >
-              사이트 대시보드에 접속하세요
+              Google 계정으로 로그인하세요
             </motion.p>
           </motion.div>
-          <form onSubmit={handleLogin} className="space-y-4">
+
+          {error && (
             <motion.div
-              initial={{ opacity: 0, x: -40 }}
-              animate={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
               transition={{
-                duration: 0.5,
+                duration: 0.4,
                 delay: 0.7,
                 type: "spring",
-                stiffness: 100,
+                stiffness: 300,
                 damping: 15,
               }}
+              className="bg-red-500/20 border border-red-500/50 rounded-lg p-4"
             >
-              <label className="block text-sm font-medium text-white/80 mb-2">
-                이메일
-              </label>
-              <Input
-                type="text"
-                placeholder="이메일 주소를 입력하세요"
-                value={email}
-                ref={emailInputRef}
-                autoComplete="email"
-                onChange={(e) => setEmail(e.target.value)}
-                className="bg-[#1E1E1E] text-white border-white/20 focus:border-yellow-500 focus:ring-yellow-500"
-              />
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, x: 40 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{
-                duration: 0.5,
-                delay: 0.8,
-                type: "spring",
-                stiffness: 100,
-                damping: 15,
-              }}
-            >
-              <label className="block text-sm font-medium text-white/80 mb-2">
-                비밀번호
-              </label>
-              <Input
-                type="password"
-                placeholder="비밀번호를 입력하세요"
-                value={password}
-                autoComplete="current-password"
-                onChange={(e) => setPassword(e.target.value)}
-                className="bg-[#1E1E1E] text-white border-white/20 focus:border-yellow-500 focus:ring-yellow-500"
-              />
-            </motion.div>
-            {error && (
-              <motion.p
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{
-                  duration: 0.4,
-                  delay: 0.9,
-                  type: "spring",
-                  stiffness: 300,
-                  damping: 15,
-                }}
-                className="text-red-400 text-sm flex items-center gap-2"
-              >
+              <p className="text-red-400 text-sm flex items-center gap-2">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="16"
@@ -429,53 +255,55 @@ const LoginPage: React.FC = () => {
                   <line x1="12" y1="16" x2="12.01" y2="16" />
                 </svg>
                 {error}
-              </motion.p>
-            )}
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{
-                duration: 0.5,
-                delay: 1,
-                type: "spring",
-                stiffness: 100,
-                damping: 15,
-              }}
-            >
-              <Button
-                type="submit"
-                className="w-full bg-yellow-500 text-black hover:bg-yellow-600 transition-colors duration-300 ease-in-out"
-              >
-                로그인
-              </Button>
+              </p>
             </motion.div>
-          </form>
+          )}
+
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{
               duration: 0.5,
-              delay: 1.1,
+              delay: 0.8,
               type: "spring",
               stiffness: 100,
               damping: 15,
             }}
-            className="text-center"
           >
-            <p className="text-sm text-white/60">
-              계정이 없으신가요?{" "}
-              <button
-                onClick={() => setIsRegisterModalOpen(true)}
-                className="text-yellow-500 hover:underline font-medium"
+            <Button
+              type="button"
+              onClick={handleGoogleLogin}
+              className="w-full bg-white text-black hover:bg-gray-100 transition-colors duration-300 ease-in-out flex items-center justify-center gap-3 py-6"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="currentColor"
               >
-                회원가입
-              </button>
-            </p>
+                <path
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                  fill="#4285F4"
+                />
+                <path
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                  fill="#34A853"
+                />
+                <path
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                  fill="#FBBC05"
+                />
+                <path
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                  fill="#EA4335"
+                />
+              </svg>
+              <span className="text-lg font-medium">Google로 로그인</span>
+            </Button>
           </motion.div>
         </div>
       </motion.div>
-
-      <RegisterModal />
     </motion.div>
   );
 };

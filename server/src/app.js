@@ -2,15 +2,14 @@ import express from "express";
 import cors from "cors";
 import morgan from "morgan";
 import dotenv from "dotenv";
+import session from "express-session";
 import connectDB from "./config/database.js";
 import authRoutes from "./routes/auth.js";
 import sitesRoutes from "./routes/sites.js";
+import passport from "./config/passport.js";
 
 // 환경변수 로드
 dotenv.config();
-
-// 데이터베이스 연결
-connectDB();
 
 const app = express();
 
@@ -24,6 +23,23 @@ app.use(
 app.use(morgan("combined"));
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+
+// 세션 설정
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "site_dash_session_secret",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 24 * 60 * 60 * 1000, // 24시간
+    },
+  })
+);
+
+// Passport 초기화
+app.use(passport.initialize());
+app.use(passport.session());
 
 // 라우트
 app.use("/api/auth", authRoutes);
@@ -49,6 +65,26 @@ app.use((error, req, res, next) => {
 
 const PORT = process.env.PORT || 5001;
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+// 데이터베이스 연결이 완료된 후 서버 시작
+(async () => {
+  try {
+    await connectDB();
+    console.log("✅ Database connection initialized");
+    
+    // 서버 시작
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`📡 API endpoint: http://localhost:${PORT}/api`);
+    });
+  } catch (error) {
+    console.error("❌ Failed to initialize database connection:", error);
+    console.warn("⚠️  Starting server without database connection...");
+    
+    // 데이터베이스 연결 실패해도 서버는 시작 (일부 기능만 작동하지 않음)
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT} (without database)`);
+      console.log(`📡 API endpoint: http://localhost:${PORT}/api`);
+      console.warn("⚠️  Some features requiring database will not work.");
+    });
+  }
+})();

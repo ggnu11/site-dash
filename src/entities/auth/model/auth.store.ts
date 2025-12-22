@@ -14,12 +14,14 @@ interface AuthStore {
   user: User | null;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<boolean>;
-  logout: () => void;
+  logout: () => Promise<void>;
   register: (
     email: string,
     password: string,
     username: string
   ) => Promise<boolean>;
+  setGoogleAuth: (token: string, user: User) => void;
+  deleteAccount: () => Promise<boolean>;
 }
 
 /** 인증 상태 관리 Zustand 스토어 */
@@ -55,7 +57,15 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       /** 로그아웃 메서드 */
-      logout: () => {
+      logout: async () => {
+        try {
+          // 서버에 로그아웃 요청
+          await authAPI.logout();
+        } catch (error) {
+          console.error("Logout API error:", error);
+          // API 실패해도 로컬 상태는 정리
+        }
+
         try {
           localStorage.removeItem("auth-token");
           localStorage.removeItem("auth-storage");
@@ -91,6 +101,71 @@ export const useAuthStore = create<AuthStore>()(
           return true;
         } catch (error) {
           console.error("Register failed:", error);
+          return false;
+        }
+      },
+
+      /** Google 로그인 콜백 처리 */
+      setGoogleAuth: (token, user) => {
+        try {
+          console.log("🔐 [AuthStore] Setting Google auth:", {
+            userId: user.id,
+            email: user.email,
+          });
+
+          // 토큰 저장
+          localStorage.setItem("auth-token", token);
+          console.log("💾 [AuthStore] Token saved to localStorage");
+
+          // 상태 업데이트
+          set({
+            user,
+            isAuthenticated: true,
+          });
+          console.log("✅ [AuthStore] Auth state updated:", {
+            user,
+            isAuthenticated: true,
+          });
+
+          // persist 미들웨어가 localStorage에 저장하는 것을 확인
+          setTimeout(() => {
+            const savedAuth = localStorage.getItem("auth-storage");
+            if (savedAuth) {
+              console.log(
+                "✅ [AuthStore] Auth state persisted to localStorage"
+              );
+            } else {
+              console.warn(
+                "⚠️ [AuthStore] Auth state not persisted to localStorage"
+              );
+            }
+          }, 100);
+        } catch (error) {
+          console.error("❌ [AuthStore] Failed to set Google auth:", error);
+          throw error;
+        }
+      },
+
+      /** 회원탈퇴 메서드 */
+      deleteAccount: async () => {
+        try {
+          // 서버에 회원탈퇴 요청
+          await authAPI.deleteAccount();
+
+          // 로컬 스토리지 정리
+          try {
+            localStorage.removeItem("auth-token");
+            localStorage.removeItem("auth-storage");
+          } catch (error) {
+            console.error("Failed to clear auth state", error);
+          }
+
+          // 상태 초기화
+          set({ user: null, isAuthenticated: false });
+
+          return true;
+        } catch (error) {
+          console.error("Delete account failed:", error);
           return false;
         }
       },

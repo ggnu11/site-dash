@@ -12,13 +12,18 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: true,
+      required: false, // 구글 로그인 사용자는 비밀번호가 없을 수 있음
       minlength: 6,
     },
     username: {
       type: String,
       required: true,
       trim: true,
+    },
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true, // null 값을 허용하면서 unique 제약 조건 유지
     },
   },
   {
