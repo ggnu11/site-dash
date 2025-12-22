@@ -11,10 +11,20 @@ router.use(authenticateToken);
 // 사이트 목록 조회
 router.get("/", async (req, res) => {
   try {
-    const sites = await Site.find({ user: req.user._id }).sort({
-      createdAt: -1,
-    });
-    res.json(sites);
+    const sites = await Site.findByUserId(req.user.id);
+    
+    // Supabase 응답을 MongoDB 형식으로 변환
+    const formattedSites = sites.map(site => ({
+      _id: site.id,
+      projectName: site.project_name,
+      projectUrl: site.project_url,
+      subMenus: site.sub_menus || [],
+      user: site.user_id,
+      createdAt: site.created_at,
+      updatedAt: site.updated_at,
+    }));
+
+    res.json(formattedSites);
   } catch (error) {
     console.error("Get sites error:", error);
     res.status(500).json({ message: "Internal server error" });
@@ -24,16 +34,24 @@ router.get("/", async (req, res) => {
 // 특정 사이트 조회
 router.get("/:id", async (req, res) => {
   try {
-    const site = await Site.findOne({
-      _id: req.params.id,
-      user: req.user._id,
-    });
+    const site = await Site.findById(req.params.id, req.user.id);
 
     if (!site) {
       return res.status(404).json({ message: "Site not found" });
     }
 
-    res.json(site);
+    // Supabase 응답을 MongoDB 형식으로 변환
+    const formattedSite = {
+      _id: site.id,
+      projectName: site.project_name,
+      projectUrl: site.project_url,
+      subMenus: site.sub_menus || [],
+      user: site.user_id,
+      createdAt: site.created_at,
+      updatedAt: site.updated_at,
+    };
+
+    res.json(formattedSite);
   } catch (error) {
     console.error("Get site error:", error);
     res.status(500).json({ message: "Internal server error" });
@@ -57,15 +75,25 @@ router.post(
 
       const { projectName, projectUrl, subMenus = [] } = req.body;
 
-      const site = new Site({
+      const site = await Site.create({
         projectName,
         projectUrl,
         subMenus,
-        user: req.user._id,
+        userId: req.user.id,
       });
 
-      await site.save();
-      res.status(201).json(site);
+      // Supabase 응답을 MongoDB 형식으로 변환
+      const formattedSite = {
+        _id: site.id,
+        projectName: site.project_name,
+        projectUrl: site.project_url,
+        subMenus: site.sub_menus || [],
+        user: site.user_id,
+        createdAt: site.created_at,
+        updatedAt: site.updated_at,
+      };
+
+      res.status(201).json(formattedSite);
     } catch (error) {
       console.error("Create site error:", error);
       res.status(500).json({ message: "Internal server error" });
@@ -88,17 +116,24 @@ router.put(
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const site = await Site.findOneAndUpdate(
-        { _id: req.params.id, user: req.user._id },
-        req.body,
-        { new: true, runValidators: true }
-      );
+      const site = await Site.update(req.params.id, req.user.id, req.body);
 
       if (!site) {
         return res.status(404).json({ message: "Site not found" });
       }
 
-      res.json(site);
+      // Supabase 응답을 MongoDB 형식으로 변환
+      const formattedSite = {
+        _id: site.id,
+        projectName: site.project_name,
+        projectUrl: site.project_url,
+        subMenus: site.sub_menus || [],
+        user: site.user_id,
+        createdAt: site.created_at,
+        updatedAt: site.updated_at,
+      };
+
+      res.json(formattedSite);
     } catch (error) {
       console.error("Update site error:", error);
       res.status(500).json({ message: "Internal server error" });
@@ -109,12 +144,9 @@ router.put(
 // 사이트 삭제
 router.delete("/:id", async (req, res) => {
   try {
-    const site = await Site.findOneAndDelete({
-      _id: req.params.id,
-      user: req.user._id,
-    });
+    const deleted = await Site.delete(req.params.id, req.user.id);
 
-    if (!site) {
+    if (!deleted) {
       return res.status(404).json({ message: "Site not found" });
     }
 

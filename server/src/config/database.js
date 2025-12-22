@@ -1,68 +1,46 @@
-import mongoose from "mongoose";
+import { createClient } from "@supabase/supabase-js";
+import dotenv from "dotenv";
 
-const connectDB = async (retries = 3, delay = 5000) => {
-  for (let i = 0; i < retries; i++) {
-    try {
-      if (!process.env.MONGODB_URI) {
-        console.error("❌ MONGODB_URI is not defined in environment variables");
-        return;
-      }
+dotenv.config();
 
-      console.log(
-        `🔄 Attempting to connect to MongoDB... (${i + 1}/${retries})`
-      );
+// Supabase 클라이언트 생성
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
 
-      const conn = await mongoose.connect(process.env.MONGODB_URI, {
-        serverSelectionTimeoutMS: 30000, // 30초 타임아웃
-        socketTimeoutMS: 45000, // 소켓 타임아웃
-        connectTimeoutMS: 30000, // 연결 타임아웃
-        maxPoolSize: 10, // 연결 풀 크기
-        retryWrites: true,
-        w: "majority",
-      });
+if (!supabaseUrl || !supabaseKey) {
+  console.error("❌ SUPABASE_URL and SUPABASE_ANON_KEY are required in environment variables");
+  console.warn("⚠️  Server will continue running without Supabase connection.");
+}
 
-      console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
+const supabase = createClient(supabaseUrl || "", supabaseKey || "");
 
-      // 연결 상태 모니터링
-      mongoose.connection.on("error", (err) => {
-        console.error("❌ MongoDB connection error:", err);
-      });
-
-      mongoose.connection.on("disconnected", () => {
-        console.warn("⚠️  MongoDB disconnected. Attempting to reconnect...");
-      });
-
-      mongoose.connection.on("reconnected", () => {
-        console.log("✅ MongoDB reconnected");
-      });
-
-      return; // 성공하면 함수 종료
-    } catch (error) {
-      console.error(
-        `❌ MongoDB connection attempt ${i + 1} failed:`,
-        error.message
-      );
-
-      if (i < retries - 1) {
-        console.log(`⏳ Retrying in ${delay / 1000} seconds...`);
-        await new Promise((resolve) => setTimeout(resolve, delay));
-      } else {
-        console.error("❌ All MongoDB connection attempts failed");
-        console.error("Full error:", error);
-        console.warn(
-          "⚠️  Server will continue running without database connection. Some features may not work."
-        );
-        console.warn("💡 Please check:");
-        console.warn("   1. MONGODB_URI is correct in .env file");
-        console.warn("   2. MongoDB Atlas cluster exists and is accessible");
-        console.warn(
-          "   3. MongoDB Atlas IP whitelist includes your IP (or 0.0.0.0/0 for all)"
-        );
-        console.warn("   4. Network connection is stable");
-        console.warn("   5. MongoDB Atlas cluster is not paused");
-      }
+// 데이터베이스 연결 확인
+const connectDB = async () => {
+  try {
+    if (!supabaseUrl || !supabaseKey) {
+      console.warn("⚠️  Supabase credentials not configured");
+      return null;
     }
+
+    // 연결 테스트 (users 테이블 조회 시도)
+    const { data, error } = await supabase
+      .from("users")
+      .select("id")
+      .limit(1);
+
+    if (error && error.code !== "PGRST116") {
+      // PGRST116은 테이블이 없을 때 발생하는 에러 (정상)
+      console.error("❌ Supabase connection error:", error.message);
+      throw error;
+    }
+
+    console.log("✅ Supabase Connected");
+    return supabase;
+  } catch (error) {
+    console.error("❌ Failed to connect to Supabase:", error.message);
+    throw error;
   }
 };
 
+export { supabase };
 export default connectDB;

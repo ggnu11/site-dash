@@ -11,13 +11,15 @@ export const authenticateToken = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId).select("-password");
+    const user = await User.findById(decoded.userId);
 
     if (!user) {
       return res.status(401).json({ message: "Invalid token" });
     }
 
-    req.user = user;
+    // password 필드 제거
+    const { password, ...userWithoutPassword } = user;
+    req.user = userWithoutPassword;
     next();
   } catch (error) {
     return res.status(403).json({ message: "Invalid token" });

@@ -57,13 +57,13 @@ router.get(
   (req, res) => {
     try {
       // JWT 토큰 생성
-      const token = jwt.sign({ userId: req.user._id }, process.env.JWT_SECRET, {
+      const token = jwt.sign({ userId: req.user.id }, process.env.JWT_SECRET, {
         expiresIn: "7d",
       });
 
       // 프론트엔드로 리다이렉트하면서 토큰 전달
       res.redirect(
-        `${process.env.FRONTEND_URL || "http://localhost:5173"}/#/login?token=${token}&userId=${req.user._id}&email=${encodeURIComponent(req.user.email)}&username=${encodeURIComponent(req.user.username)}`
+        `${process.env.FRONTEND_URL || "http://localhost:5173"}/#/login?token=${token}&userId=${req.user.id}&email=${encodeURIComponent(req.user.email)}&username=${encodeURIComponent(req.user.username)}`
       );
     } catch (error) {
       console.error("Google callback error:", error);
@@ -78,7 +78,7 @@ router.get(
 router.get("/me", authenticateToken, async (req, res) => {
   res.json({
     user: {
-      id: req.user._id,
+      id: req.user.id,
       email: req.user.email,
       username: req.user.username,
     },
@@ -100,10 +100,10 @@ router.post("/logout", authenticateToken, async (req, res) => {
 // 회원탈퇴
 router.delete("/account", authenticateToken, async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.id;
 
     // 사용자 삭제
-    await User.findByIdAndDelete(userId);
+    await User.delete(userId);
 
     console.log(`User ${userId} account deleted`);
     res.json({ message: "Account deleted successfully" });

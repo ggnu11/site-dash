@@ -2,6 +2,7 @@ import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import dotenv from "dotenv";
 import User from "../models/User.js";
+import { supabase } from "../config/database.js";
 
 // 환경변수 로드
 dotenv.config();
@@ -17,86 +18,40 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
       },
       async (_accessToken, _refreshToken, profile, done) => {
         try {
-          // MongoDB 연결 상태 확인
-          const mongoose = await import("mongoose");
-          const readyState = mongoose.default.connection.readyState;
-
-          // readyState: 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting
-          if (readyState !== 1) {
-            console.error(
-              "❌ MongoDB is not connected. ReadyState:",
-              readyState,
-              "(0=disconnected, 1=connected, 2=connecting, 3=disconnecting)"
+          if (!supabase) {
+            return done(
+              new Error("Database connection is not available. Please check if Supabase is configured."),
+              null
             );
-
-            // 연결 중이면 잠시 대기 후 재시도
-            if (readyState === 2) {
-              console.log("⏳ MongoDB is connecting, waiting...");
-              await new Promise((resolve) => setTimeout(resolve, 2000));
-
-              // 다시 확인
-              if (mongoose.default.connection.readyState !== 1) {
-                return done(
-                  new Error(
-                    "Database connection is not available. Please check if MongoDB is running."
-                  ),
-                  null
-                );
-              }
-            } else {
-              return done(
-                new Error(
-                  "Database connection is not available. Please check if MongoDB is running."
-                ),
-                null
-              );
-            }
           }
 
-          // 기존 사용자 찾기
-          let user = await User.findOne({ googleId: profile.id }).maxTimeMS(
-            10000
-          );
+          // 기존 사용자 찾기 (Google ID로)
+          let user = await User.findByGoogleId(profile.id);
 
           if (user) {
             return done(null, user);
           }
 
           // 같은 이메일로 가입된 사용자가 있는지 확인
-          user = await User.findOne({
-            email: profile.emails[0].value,
-          }).maxTimeMS(10000);
+          user = await User.findByEmail(profile.emails[0].value);
 
           if (user) {
             // 기존 계정에 googleId 추가
-            user.googleId = profile.id;
-            await user.save();
+            user = await User.update(user.id, { google_id: profile.id });
             return done(null, user);
           }
 
           // 새 사용자 생성
-          user = new User({
+          user = await User.create({
             googleId: profile.id,
             email: profile.emails[0].value,
-            username:
-              profile.displayName || profile.emails[0].value.split("@")[0],
+            username: profile.displayName || profile.emails[0].value.split("@")[0],
             // password는 설정하지 않음 (구글 로그인 사용자)
           });
 
-          await user.save();
           done(null, user);
         } catch (error) {
           console.error("Google OAuth error:", error);
-          // 타임아웃 오류인 경우 더 명확한 메시지
-          if (error.message && error.message.includes("buffering timed out")) {
-            console.error(
-              "❌ MongoDB connection timeout. Please check your database connection."
-            );
-            return done(
-              new Error("Database connection timeout. Please try again later."),
-              null
-            );
-          }
           done(error, null);
         }
       }
@@ -114,13 +69,14 @@ passport.serializeUser((user, done) => {
 
 passport.deserializeUser(async (id, done) => {
   try {
-    // MongoDB 연결 상태 확인
-    const mongoose = await import("mongoose");
-    if (mongoose.default.connection.readyState !== 1) {
+    if (!supabase) {
       return done(new Error("Database connection is not available"), null);
     }
 
-    const user = await User.findById(id).maxTimeMS(10000);
+    const user = await User.findById(id);
+    if (!user) {
+      return done(new Error("User not found"), null);
+    }
     done(null, user);
   } catch (error) {
     console.error("Deserialize user error:", error);

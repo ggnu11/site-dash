@@ -4,6 +4,7 @@ import morgan from "morgan";
 import dotenv from "dotenv";
 import session from "express-session";
 import connectDB from "./config/database.js";
+import { supabase } from "./config/database.js";
 import authRoutes from "./routes/auth.js";
 import sitesRoutes from "./routes/sites.js";
 import passport from "./config/passport.js";
@@ -68,26 +69,36 @@ app.use((error, req, res, next) => {
 
 const PORT = process.env.PORT || 5001;
 
-// 데이터베이스 연결이 완료된 후 서버 시작
-(async () => {
+// 헬스체크 엔드포인트 (Railway 헬스체크용)
+app.get("/health", async (req, res) => {
+  let dbStatus = "disconnected";
   try {
-    await connectDB();
-    console.log("✅ Database connection initialized");
-    
-    // 서버 시작
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
-      console.log(`📡 API endpoint: http://localhost:${PORT}/api`);
-    });
+    if (supabase) {
+      const { error } = await supabase.from("users").select("id").limit(1);
+      dbStatus = error && error.code === "PGRST116" ? "no_tables" : "connected";
+    }
   } catch (error) {
-    console.error("❌ Failed to initialize database connection:", error);
-    console.warn("⚠️  Starting server without database connection...");
-    
-    // 데이터베이스 연결 실패해도 서버는 시작 (일부 기능만 작동하지 않음)
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT} (without database)`);
-      console.log(`📡 API endpoint: http://localhost:${PORT}/api`);
-      console.warn("⚠️  Some features requiring database will not work.");
-    });
+    dbStatus = "error";
   }
-})();
+
+  res.status(200).json({ 
+    status: "ok",
+    timestamp: new Date().toISOString(),
+    database: dbStatus
+  });
+});
+
+// 서버를 먼저 시작 (Railway 헬스체크를 위해)
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📡 API endpoint: http://localhost:${PORT}/api`);
+  console.log(`❤️  Health check: http://localhost:${PORT}/health`);
+  
+  // 서버 시작 후 비동기로 데이터베이스 연결 시도
+  connectDB().then(() => {
+    console.log("✅ Supabase connection initialized");
+  }).catch((error) => {
+    console.error("❌ Failed to initialize Supabase connection:", error);
+    console.warn("⚠️  Server is running without database connection. Some features may not work.");
+  });
+});
