@@ -52,7 +52,7 @@ interface MenuState {
 }
 
 /** 메뉴 상태 관리 스토어 */
-export const useMenuStore = create<MenuState>((set, get) => ({
+export const useMenuStore = create<MenuState>((set) => ({
   menus: [],
   loading: false,
 

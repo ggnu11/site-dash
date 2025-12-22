@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 
 function App() {
   const fetchMenus = useMenuStore((state) => state.fetchMenus);
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated } = useAuthStore();
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
