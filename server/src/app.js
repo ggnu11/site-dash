@@ -67,28 +67,32 @@ app.use((error, req, res, next) => {
   });
 });
 
-const PORT = process.env.PORT || 5001;
-
+const PORT = process.env.PORT || 8080;
+const HOST = "0.0.0.0";
 // 헬스체크 엔드포인트 (Railway 헬스체크용 - 빠른 응답)
 app.get("/health", (req, res) => {
-  res.status(200).json({ 
+  res.status(200).json({
     status: "ok",
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
 // 서버를 먼저 시작 (Railway 헬스체크를 위해)
 // 0.0.0.0으로 바인딩하여 외부에서 접근 가능하도록 설정
-app.listen(PORT, "0.0.0.0", () => {
+app.listen(PORT, HOST, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📡 API endpoint: http://0.0.0.0:${PORT}/api`);
   console.log(`❤️  Health check: http://0.0.0.0:${PORT}/health`);
-  
+
   // 서버 시작 후 비동기로 데이터베이스 연결 시도
-  connectDB().then(() => {
-    console.log("✅ Supabase connection initialized");
-  }).catch((error) => {
-    console.error("❌ Failed to initialize Supabase connection:", error);
-    console.warn("⚠️  Server is running without database connection. Some features may not work.");
-  });
+  connectDB()
+    .then(() => {
+      console.log("✅ Supabase connection initialized");
+    })
+    .catch((error) => {
+      console.error("❌ Failed to initialize Supabase connection:", error);
+      console.warn(
+        "⚠️  Server is running without database connection. Some features may not work."
+      );
+    });
 });
