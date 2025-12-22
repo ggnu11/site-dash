@@ -129,17 +129,7 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 50 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{
-        duration: 0.7,
-        type: "spring",
-        stiffness: 100,
-        damping: 15,
-      }}
-      className="min-h-screen bg-[#1E1E1E] flex items-center justify-center p-4"
-    >
+    <div className="min-h-screen bg-[#1E1E1E] flex items-center justify-center p-4">
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -270,7 +260,7 @@ const LoginPage: React.FC = () => {
           </motion.div>
         </div>
       </motion.div>
-    </motion.div>
+    </div>
   );
 };
 
