@@ -25,13 +25,16 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 // 세션 설정
+const isProduction = process.env.NODE_ENV === "production";
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "site_dash_session_secret",
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: process.env.NODE_ENV === "production",
+      secure: isProduction, // 프로덕션에서만 HTTPS 사용
+      httpOnly: true, // XSS 공격 방지
+      sameSite: isProduction ? "none" : "lax", // 프로덕션에서 CORS 쿠키 허용
       maxAge: 24 * 60 * 60 * 1000, // 24시간
     },
   })
