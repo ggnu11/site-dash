@@ -66,8 +66,11 @@ export const useAuthStore = create<AuthStore>()(
         try {
           // 서버에 로그아웃 요청
           await authAPI.logout();
-        } catch (error) {
-          console.error("Logout API error:", error);
+        } catch (error: any) {
+          // 401 에러는 무시 (이미 로그아웃되었거나 회원탈퇴된 경우)
+          if (error?.response?.status !== 401) {
+            console.error("Logout API error:", error);
+          }
           // API 실패해도 로컬 상태는 정리
         }
 
