@@ -1,4 +1,16 @@
-import apiClient from "./client";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  serverTimestamp,
+  Timestamp,
+} from "firebase/firestore";
+import { auth, db } from "./firebase";
 
 export interface SubMenuData {
   name: string;
@@ -12,41 +24,116 @@ export interface SiteData {
 }
 
 export interface Site {
-  _id: string;
+  id: string;
   projectName: string;
   projectUrl: string;
-  subMenus: Array<{
-    _id: string;
-    name: string;
-    url: string;
-  }>;
-  user: string;
+  subMenus: SubMenuData[];
+  userId: string;
   createdAt: string;
   updatedAt: string;
 }
 
+const SITES_COLLECTION = "sites";
+
+const toISOString = (val: unknown): string => {
+  if (val instanceof Timestamp) return val.toDate().toISOString();
+  if (val instanceof Date) return val.toISOString();
+  if (typeof val === "string") return val;
+  return new Date().toISOString();
+};
+
 export const sitesAPI = {
   getAll: async (): Promise<Site[]> => {
-    const response = await apiClient.get("/sites");
-    return response.data;
+    const user = auth.currentUser;
+    if (!user) throw new Error("Not authenticated");
+
+    const sitesRef = collection(db, SITES_COLLECTION);
+    const q = query(
+      sitesRef,
+      where("userId", "==", user.uid)
+    );
+    const snapshot = await getDocs(q);
+
+    const sites = snapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        projectName: data.projectName,
+        projectUrl: data.projectUrl,
+        subMenus: data.subMenus || [],
+        userId: data.userId,
+        createdAt: toISOString(data.createdAt),
+        updatedAt: toISOString(data.updatedAt),
+      };
+    });
+
+    return sites.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   },
 
-  getById: async (id: string): Promise<Site> => {
-    const response = await apiClient.get(`/sites/${id}`);
-    return response.data;
+  create: async (siteData: SiteData): Promise<Site> => {
+    const user = auth.currentUser;
+    if (!user) throw new Error("Not authenticated");
+
+    const docRef = await addDoc(collection(db, SITES_COLLECTION), {
+      projectName: siteData.projectName,
+      projectUrl: siteData.projectUrl,
+      subMenus: siteData.subMenus || [],
+      userId: user.uid,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+
+    const now = new Date().toISOString();
+    return {
+      id: docRef.id,
+      projectName: siteData.projectName,
+      projectUrl: siteData.projectUrl,
+      subMenus: siteData.subMenus || [],
+      userId: user.uid,
+      createdAt: now,
+      updatedAt: now,
+    };
   },
 
-  create: async (data: SiteData): Promise<Site> => {
-    const response = await apiClient.post("/sites", data);
-    return response.data;
-  },
+  update: async (id: string, updates: Partial<SiteData>): Promise<Site> => {
+    const user = auth.currentUser;
+    if (!user) throw new Error("Not authenticated");
 
-  update: async (id: string, data: Partial<SiteData>): Promise<Site> => {
-    const response = await apiClient.put(`/sites/${id}`, data);
-    return response.data;
+    const docRef = doc(db, SITES_COLLECTION, id);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const updateData: Record<string, any> = {
+      updatedAt: serverTimestamp(),
+    };
+    if (updates.projectName !== undefined)
+      updateData.projectName = updates.projectName;
+    if (updates.projectUrl !== undefined)
+      updateData.projectUrl = updates.projectUrl;
+    if (updates.subMenus !== undefined)
+      updateData.subMenus = updates.subMenus;
+
+    await updateDoc(docRef, updateData);
+
+    // 업데이트된 데이터 반환 (로컬 구성)
+    const sitesRef = collection(db, SITES_COLLECTION);
+    const q = query(sitesRef, where("userId", "==", user.uid));
+    const snapshot = await getDocs(q);
+    const found = snapshot.docs.find((d) => d.id === id);
+    if (!found) throw new Error("Site not found");
+
+    const data = found.data();
+    return {
+      id: found.id,
+      projectName: data.projectName,
+      projectUrl: data.projectUrl,
+      subMenus: data.subMenus || [],
+      userId: data.userId,
+      createdAt: toISOString(data.createdAt),
+      updatedAt: toISOString(data.updatedAt),
+    };
   },
 
   delete: async (id: string): Promise<void> => {
-    await apiClient.delete(`/sites/${id}`);
+    const docRef = doc(db, SITES_COLLECTION, id);
+    await deleteDoc(docRef);
   },
 };

@@ -1,46 +1,33 @@
-import apiClient from "./client";
-
-export interface LoginData {
-  email: string;
-  password: string;
-}
-
-export interface RegisterData {
-  email: string;
-  password: string;
-  username: string;
-}
-
-export interface AuthResponse {
-  token: string;
-  user: {
-    id: string;
-    email: string;
-    username: string;
-  };
-}
+import {
+  signInWithPopup,
+  signOut,
+  deleteUser,
+} from "firebase/auth";
+import { collection, query, where, getDocs, deleteDoc } from "firebase/firestore";
+import { auth, db, googleProvider } from "./firebase";
 
 export const authAPI = {
-  login: async (data: LoginData): Promise<AuthResponse> => {
-    const response = await apiClient.post("/auth/login", data);
-    return response.data;
+  signInWithGoogle: async () => {
+    const result = await signInWithPopup(auth, googleProvider);
+    return result.user;
   },
 
-  register: async (data: RegisterData): Promise<AuthResponse> => {
-    const response = await apiClient.post("/auth/register", data);
-    return response.data;
+  logout: async () => {
+    await signOut(auth);
   },
 
-  getCurrentUser: async () => {
-    const response = await apiClient.get("/auth/me");
-    return response.data.user;
-  },
+  deleteAccount: async () => {
+    const user = auth.currentUser;
+    if (!user) throw new Error("Not authenticated");
 
-  logout: async (): Promise<void> => {
-    await apiClient.post("/auth/logout");
-  },
+    // 사용자의 모든 사이트 삭제
+    const sitesRef = collection(db, "sites");
+    const q = query(sitesRef, where("userId", "==", user.uid));
+    const snapshot = await getDocs(q);
+    const deletePromises = snapshot.docs.map((doc) => deleteDoc(doc.ref));
+    await Promise.all(deletePromises);
 
-  deleteAccount: async (): Promise<void> => {
-    await apiClient.delete("/auth/account");
+    // Firebase Auth 계정 삭제
+    await deleteUser(user);
   },
 };

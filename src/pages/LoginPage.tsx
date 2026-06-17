@@ -1,132 +1,19 @@
 import { useAuthStore } from "@/entities/auth/model/auth.store";
 import { AppRoutes } from "@/processes/routing/model/routes";
 import { Button } from "@/shared/ui/button";
-import { showError, showSuccess } from "@/shared/lib/toast";
 import { motion } from "framer-motion";
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-/** 로그인 페이지 컴포넌트 */
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, setGoogleAuth } = useAuthStore();
+  const { isAuthenticated, signInWithGoogle } = useAuthStore();
 
-  // 이미 인증된 경우 대시보드로 리다이렉트
   useEffect(() => {
     if (isAuthenticated) {
-      console.log(
-        "✅ [LoginPage] Already authenticated, redirecting to dashboard"
-      );
       navigate(AppRoutes.DASHBOARD, { replace: true });
-    } else {
-      console.log("ℹ️ [LoginPage] Not authenticated, showing login page");
     }
   }, [isAuthenticated, navigate]);
-
-  // Google OAuth 콜백 처리
-  useEffect(() => {
-    // HashRouter를 사용하므로 해시에서 쿼리 파라미터를 추출해야 함
-    const hash = window.location.hash;
-    const hashPath = hash.split("?")[0]; // #/login 부분
-    const hashQuery = hash.includes("?") ? hash.split("?")[1] : "";
-
-    console.log("🔍 [LoginPage] Parsing hash:", { hash, hashPath, hashQuery });
-
-    const urlParams = new URLSearchParams(hashQuery || window.location.search);
-    const token = urlParams.get("token");
-    const userId = urlParams.get("userId");
-    const email = urlParams.get("email");
-    const username = urlParams.get("username");
-    const errorParam = urlParams.get("error");
-
-    console.log("🔍 [LoginPage] Extracted params:", {
-      hasToken: !!token,
-      hasUserId: !!userId,
-      hasEmail: !!email,
-      hasUsername: !!username,
-      hasError: !!errorParam,
-    });
-
-    if (errorParam) {
-      let errorMessage = "구글 로그인에 실패했습니다. 다시 시도해주세요.";
-
-      // 오류 타입에 따른 메시지 설정
-      switch (errorParam) {
-        case "oauth_code_expired":
-          errorMessage = "인증 코드가 만료되었습니다. 다시 로그인해주세요.";
-          break;
-        case "database_connection_failed":
-          errorMessage =
-            "데이터베이스 연결에 실패했습니다. 서버 관리자에게 문의하세요.";
-          break;
-        case "google_auth_failed":
-          errorMessage = "구글 로그인에 실패했습니다. 다시 시도해주세요.";
-          break;
-        case "token_generation_failed":
-          errorMessage = "토큰 생성에 실패했습니다. 다시 시도해주세요.";
-          break;
-        case "user_not_found":
-          errorMessage = "사용자 정보를 찾을 수 없습니다. 다시 시도해주세요.";
-          break;
-        default:
-          errorMessage = "로그인 중 오류가 발생했습니다. 다시 시도해주세요.";
-      }
-
-      showError(errorMessage);
-      // URL에서 에러 파라미터 제거 (해시 라우터 사용)
-      window.history.replaceState(
-        {},
-        document.title,
-        window.location.pathname + "#/login"
-      );
-      return;
-    }
-
-    if (token && userId && email && username) {
-      try {
-        console.log("🔐 [LoginPage] Google OAuth callback received:", {
-          token: token.substring(0, 20) + "...",
-          userId,
-          email,
-          username,
-        });
-
-        const user = {
-          id: userId,
-          email: decodeURIComponent(email),
-          username: decodeURIComponent(username),
-        };
-
-        // Zustand 스토어를 통해 인증 상태 설정
-        setGoogleAuth(token, user);
-        console.log("✅ [LoginPage] Auth state set, waiting for persist...");
-        showSuccess("로그인에 성공했습니다!");
-
-        // persist 미들웨어가 localStorage에 저장하는 시간을 고려
-        // 전체 페이지 새로고침을 통해 상태를 확실히 반영
-        setTimeout(() => {
-          console.log(
-            "🚀 [LoginPage] Redirecting to dashboard with full page reload"
-          );
-          // 해시 라우터를 사용하므로 #/dashboard로 리다이렉트
-          window.location.href =
-            window.location.origin + window.location.pathname + "#/dashboard";
-        }, 300);
-      } catch (error) {
-        console.error(
-          "❌ [LoginPage] Error processing Google login callback:",
-          error
-        );
-        showError("로그인 처리 중 오류가 발생했습니다.");
-      }
-    }
-  }, [navigate, setGoogleAuth]);
-
-  /** Google 로그인 핸들러 */
-  const handleGoogleLogin = () => {
-    const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
-    window.location.href = `${apiUrl}/auth/google`;
-  };
 
   return (
     <div className="min-h-screen bg-[#1E1E1E] flex items-center justify-center p-4">
@@ -197,7 +84,7 @@ const LoginPage: React.FC = () => {
               }}
               className="text-4xl font-bold text-white mb-2"
             >
-              로그인
+              Site Dash
             </motion.h1>
             <motion.p
               initial={{ opacity: 0, x: 30 }}
@@ -228,7 +115,7 @@ const LoginPage: React.FC = () => {
           >
             <Button
               type="button"
-              onClick={handleGoogleLogin}
+              onClick={signInWithGoogle}
               className="w-full bg-white text-black hover:bg-gray-100 transition-colors duration-300 ease-in-out flex items-center justify-center gap-3 py-6"
             >
               <svg
